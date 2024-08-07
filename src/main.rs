@@ -1,8 +1,6 @@
 use clap::Parser;
-use reqwest::Error;
-use serde_json::{Result, Value};
-use std::env;
-use std::{collections::HashMap, result};
+use serde_json::Value;
+use std::{collections::HashMap, env};
 
 #[derive(Parser)]
 #[command(name = "weather_app")]
@@ -61,7 +59,6 @@ async fn get_weather(locations: HashMap<String, String>, api_key: &str) {
         );
         if let Some(response) = get_reqeust(&url).await {
             let json_value: Vec<Value> = serde_json::from_str(&response).expect("msg");
-            let temp: f64 = 0.0;
             for item in json_value {
                 if let Some(temperature) = item.get("Temperature") {
                     if let Some(metric_temp) = temperature.get("Metric") {
