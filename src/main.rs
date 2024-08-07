@@ -1,6 +1,7 @@
 use clap::Parser;
 use reqwest::Error;
 use serde_json::{Result, Value};
+use std::env;
 use std::{collections::HashMap, result};
 
 #[derive(Parser)]
@@ -21,8 +22,11 @@ async fn get_reqeust(url: &str) -> Option<String> {
     println!("Failed to fetch data. Status: {}", response.status());
     None
 }
-async fn get_location_keys(city: &str) -> HashMap<String, String> {
-    let url = format!("http://dataservice.accuweather.com/locations/v1/cities/search?q={}&apikey=6NWM0h5VkCv4rZYAFdAC7WEAp7ZgPa0s",city);
+async fn get_location_keys(city: &str, api_key: &str) -> HashMap<String, String> {
+    let url = format!(
+        "http://dataservice.accuweather.com/locations/v1/cities/search?q={}&apikey={}",
+        city, api_key
+    );
     // Send the GET request
     let mut result = HashMap::new();
 
@@ -49,11 +53,11 @@ async fn get_location_keys(city: &str) -> HashMap<String, String> {
     result
 }
 
-async fn get_weather(locations: HashMap<String, String>) {
-    for (key, name) in locations {
+async fn get_weather(locations: HashMap<String, String>, api_key: &str) {
+    for (city_key, name) in locations {
         let url = format!(
-            " http://dataservice.accuweather.com/currentconditions/v1/{}?apikey=6NWM0h5VkCv4rZYAFdAC7WEAp7ZgPa0s",
-            key
+            " http://dataservice.accuweather.com/currentconditions/v1/{}?apikey={}",
+            city_key, api_key
         );
         if let Some(response) = get_reqeust(&url).await {
             let json_value: Vec<Value> = serde_json::from_str(&response).expect("msg");
@@ -83,7 +87,7 @@ async fn get_weather(locations: HashMap<String, String>) {
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-
-    let locations = get_location_keys(&args.city).await;
-    get_weather(locations).await;
+    let api_key = env::var("API_KEY").expect("API KEY");
+    let locations = get_location_keys(&args.city, &api_key).await;
+    get_weather(locations, &api_key).await;
 }
